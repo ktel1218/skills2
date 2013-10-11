@@ -48,10 +48,28 @@ The datetime and timedelta classes will be immensely helpful here, as will the s
 
 import sys
 import datetime
+import csv
 
-def parse_one_record(line):
+def parse_one_record():#line
     """Take a line from reservations.csv and return a dictionary representing that record. (hint: use the datetime type when parsing the start and end date columns)"""
-    return {}
+    reserve_dict = {}
+    with open('reservations.csv', 'rb') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            reserve_id = row[0]
+            start_date = row[1].split('/')
+            end_date = row[2].split('/')
+            for date in range(len(start_date)):
+                start_date[date] = int(start_date[date])
+            for date in range(len(end_date)):
+                end_date[date] = int(end_date[date])
+            start_date = datetime.datetime(start_date[2], start_date[0], start_date[1])
+            end_date = datetime.datetime(end_date[2], end_date[0], end_date[1])
+
+
+            reserve_dict[id] = [start_date, end_date]
+
+    return reserve_dict
 
 def read_units():
     """Read in the file units.csv and returns a list of all known units."""
@@ -72,18 +90,19 @@ def main():
     units = read_units()
     reservations = read_existing_reservations()  
 
-    while True:
-        command = raw_input("SeaBnb> ")
-        cmd = command.split()
-        if cmd[0] == "available":
-            # look up python variable arguments for explanation of the *
-            available(units, reservations, *cmd[1:])
-        elif cmd[0] == "reserve":
-            reserve(units, reservations, *cmd[1:])
-        elif cmd[0] == "quit":
-            sys.exit(0)
-        else:
-            print "Unknown command"
+    # while True:
+    #     command = raw_input("SeaBnb> ")
+    #     cmd = command.split()
+    #     if cmd[0] == "available":
+    #         # look up python variable arguments for explanation of the *
+    #         available(units, reservations, *cmd[1:])
+    #     elif cmd[0] == "reserve":
+    #         reserve(units, reservations, *cmd[1:])
+    #     elif cmd[0] == "quit":
+    #         sys.exit(0)
+    #     else:
+    #         print "Unknown command"
+    parse_one_record();
 
 if __name__ == "__main__":
     main()
