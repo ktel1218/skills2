@@ -47,62 +47,122 @@ The datetime and timedelta classes will be immensely helpful here, as will the s
 """
 
 import sys
-import datetime
+from datetime import datetime, timedelta
 import csv
 
-def parse_one_record():#line
+def parse_date(date):
+
+    parsed_date = datetime.strptime(
+        date, "%m/%d/%Y")
+
+    return parsed_date
+
+def parse_one_record(reservation_list):#line
     """Take a line from reservations.csv and return a dictionary representing that record. (hint: use the datetime type when parsing the start and end date columns)"""
+
     reserve_dict = {}
-    with open('reservations.csv', 'rb') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            reserve_id = row[0]
-            start_date = row[1].split('/')
-            end_date = row[2].split('/')
-            for date in range(len(start_date)):
-                start_date[date] = int(start_date[date])
-            for date in range(len(end_date)):
-                end_date[date] = int(end_date[date])
-            start_date = datetime.datetime(start_date[2], start_date[0], start_date[1])
-            end_date = datetime.datetime(end_date[2], end_date[0], end_date[1])
 
+    reservation = reservation_list.split(", ")
 
-            reserve_dict[id] = [start_date, end_date]
+    reserve_id = reservation[0]
+    start_date = parse_date(reservation[1])
+    end_date = parse_date(reservation[2])
+
+    reserve_dict["unit_id"] = reserve_id
+    reserve_dict["start_date"] = start_date
+    reserve_dict["end_date"] = end_date
 
     return reserve_dict
 
 def read_units():
     """Read in the file units.csv and returns a list of all known units."""
-    return []
+    units = []
+    f = open("units.csv")
+    units_text = f.read().split("\n")
+    for line in units_text:
+        unit = line.split(', ')
+        units.append(tuple(unit))
+    return units
 
 def read_existing_reservations():
     """Reads in the file reservations.csv and returns a list of reservations."""
-    return []
+    reservations = []
+    f = open("reservations.csv")
+    reserve_text = f.read().split("\n")
+    for line in reserve_text:
+        reservations.append(parse_one_record(line))
+    f.close()
+    return reservations
 
 def available(units, reservations, start_date, occupants, stay_length):
     unit_id = 0
-    print "Unit %d is available"%unit_id
+    available = []
+    occupants = int(occupants)
+    s_date = parse_date(start_date)
+    length_of_stay = timedelta(days = int(stay_length))
+    e_date = s_date + length_of_stay
+    # units is a list of tuples
+    # reservations is a list of dicts
+    for unit in units:
+        unit_id = unit[0]
+        occupancy = int(unit[1])
+        if occupants <= occupancy:
+            #it's big enough
+            available.append(unit_id)
+
+    for reservation in reservations:
+        if s_date < reservation["end_date"] and e_date > reservation["start_date"]:
+            while reservation["unit_id"] in available:
+                available.remove(reservation["unit_id"])
+
+    # for reservation in reservations:
+    # #    if c >= b or d <= a:
+    #     if (s_date >= reservation["start_date"] or 
+    #         e_date <= reservation["end_date"]):
+
+    # # a -------- b
+    # #     c --------- d
+    # #            c -------- d
+
+    # check occupants against unit[1]
+    # stay length uses time delta to get end date
+    for unit in available:
+        print "Unit %r is available"%unit
+
+    return available
 
 def reserve(units, reservations, unit_id, start_date, stay_length):
-    print "Successfully reserved"
+
+    new_reservation = {}
+
+    s_date = parse_date(start_date)
+    e_date = s_date + timedelta(days = int(stay_length))
+
+    new_reservation["unit_id"] = unit_id
+    new_reservation["start_date"] = s_date
+    new_reservation["end_date"] = e_date
+
+    reservations.append(new_reservation)
+
+    print "Successfully reserved unit %r for %r days" %(unit_id, stay_length)
 
 def main():
     units = read_units()
     reservations = read_existing_reservations()  
 
-    # while True:
-    #     command = raw_input("SeaBnb> ")
-    #     cmd = command.split()
-    #     if cmd[0] == "available":
-    #         # look up python variable arguments for explanation of the *
-    #         available(units, reservations, *cmd[1:])
-    #     elif cmd[0] == "reserve":
-    #         reserve(units, reservations, *cmd[1:])
-    #     elif cmd[0] == "quit":
-    #         sys.exit(0)
-    #     else:
-    #         print "Unknown command"
-    parse_one_record();
+    while True:
+        command = raw_input("SeaBnb> ")
+        cmd = command.split()
+        if cmd[0] == "available":
+            # look up python variable arguments for explanation of the *
+            available(units, reservations, *cmd[1:])
+        elif cmd[0] == "reserve":
+            reserve(units, reservations, *cmd[1:])
+        elif cmd[0] == "quit":
+            sys.exit(0)
+        else:
+            print "Unknown command"
+
 
 if __name__ == "__main__":
     main()
